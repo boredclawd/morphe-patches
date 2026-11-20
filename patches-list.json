@@ -1,5 +1,40 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "0.0.0",
-  "patches": []
+  "version": "1.0.0-dev.1",
+  "patches": [
+    {
+      "name": "Disable SMS to MMS conversion",
+      "description": "Sends long text messages as multi-part SMS instead of automatically converting them to MMS.",
+      "default": true,
+      "category": null,
+      "compatiblePackages": [
+        {
+          "packageName": "com.samsung.android.messaging",
+          "name": "Samsung Messages",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#20AFFF",
+          "signatures": null,
+          "formFactor": "MOBILE",
+          "targets": [
+            {
+              "version": "15.5.31.11",
+              "versionCodes": null,
+              "isExperimental": false,
+              "minSdk": 31,
+              "description": null
+            },
+            {
+              "version": "16.3.21.1",
+              "versionCodes": null,
+              "isExperimental": false,
+              "minSdk": 33,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": []
+    }
+  ]
 }

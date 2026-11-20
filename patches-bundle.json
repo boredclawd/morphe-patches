@@ -1,7 +1,7 @@
 {
-  "created_at": "",
-  "description": "",
-  "download_url": "",
+  "created_at": "2026-11-20T22:26:44",
+  "description": "## 1.0.0-dev.1 (2026-11-20)\n\n### ✨ New Features\n\n* add disable SMS to MMS conversion patch for Samsung Messages ([6f7d8fd](https://github.com/boredclawd/morphe-patches/commit/6f7d8fdd0b02eddb16cabc0a938ca10c60b5d431))",
+  "download_url": "https://github.com/boredclawd/morphe-patches/releases/download/v1.0.0-dev.1/patches-1.0.0-dev.1.mpp",
   "signature_download_url": "",
-  "version": ""
+  "version": "1.0.0-dev.1"
 }
