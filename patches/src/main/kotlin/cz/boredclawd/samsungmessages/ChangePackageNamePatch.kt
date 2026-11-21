@@ -139,6 +139,18 @@ internal fun BytecodePatchContext.redirectCalls(target: String, calls: Map<Strin
     return moved
 }
 
+private fun BytecodePatchContext.redirectToWrappers(target: String, owners: Set<String>): Int {
+    val calls = mutableMapOf<String, MutableSet<String>>()
+    for (m in mutableClassDefBy(target).methods) {
+        if (!com.android.tools.smali.dexlib2.AccessFlags.STATIC.isSet(m.accessFlags) || !com.android.tools.smali.dexlib2.AccessFlags.PUBLIC.isSet(m.accessFlags)) continue
+        val parameters = m.parameterTypes.map { it.toString() }
+        val owner = parameters.firstOrNull() ?: continue
+        if (owner !in owners) continue
+        calls.getOrPut(owner) { mutableSetOf() } += "${m.name}(${parameters.drop(1).joinToString("")})${m.returnType}"
+    }
+    return redirectCalls(target, calls)
+}
+
 /**
  * Installs next to Samsung's stock Messages on Galaxy phones under its own package name so it can be installed
  * as an update or standalone user app on unrooted One UI and set as the default SMS app.
@@ -183,6 +195,13 @@ val changePackageNamePatch = bytecodePatch(
                     root.setAttribute("package", new)
                     root.removeAttribute("android:sharedUserId")
                     root.removeAttribute("coreApp")
+
+                    for (tag in listOf("uses-library", "uses-native-library")) {
+                        val nodes = manifest.getElementsByTagName(tag)
+                        for (i in 0 until nodes.length) {
+                            (nodes.item(i) as Element).setAttribute("android:required", "false")
+                        }
+                    }
 
                     val own = manifest.elements("permission").map { it.getAttribute("android:name") }.toSet()
                     for (element in manifest.elements("permission") + manifest.elements("uses-permission")) {
@@ -280,5 +299,53 @@ val changePackageNamePatch = bytecodePatch(
         )
         val redirectedObservers = redirectCalls("Lcz/boredclawd/samsungmessages/Providers;", observers)
         log.info("Redirected $redirectedObservers ContentObserver registrations to safe wrapper")
+
+        // Neutralize SimMobility listeners that require privileged IMS service
+        val simMobility = classDefByOrNull("Lcom/samsung/android/messaging/common/util/SimMobility;")
+        if (simMobility != null) {
+            val mutableSimMobility = mutableClassDefBy("Lcom/samsung/android/messaging/common/util/SimMobility;")
+            mutableSimMobility.methods.filter { it.name == "registerSimMobilityStatusListener" }.forEach {
+                it.addInstructions(0, "return-void")
+            }
+            mutableSimMobility.methods.filter { it.name == "isSimMobility" }.forEach {
+                it.addInstructions(0, "const/4 v0, 0x0\nreturn v0")
+            }
+            log.info("Patched SimMobility methods to prevent ImsService SecurityException")
+        }
+
+        // Neutralize IMS wrapper calls that access privileged Samsung IMS service
+        val semImsManagerImpl = classDefByOrNull("Lcom/samsung/android/messaging/seapiwrapper/factory/SemImsManagerImpl;")
+        if (semImsManagerImpl != null) {
+            val mutableSemIms = mutableClassDefBy("Lcom/samsung/android/messaging/seapiwrapper/factory/SemImsManagerImpl;")
+            mutableSemIms.methods.filter {
+                it.name in setOf(
+                    "connectService", "disconnectService", "registerSimMobilityStatusListener",
+                    "registerImsRegistrationListener", "unregisterImsRegistrationListener",
+                    "registerAutoConfigurationListener", "unregisterAutoConfigurationListener",
+                    "registerImsOngoingFtEventListener", "unregisterImsOngoingFtEventListener",
+                    "enableRcs", "enableIpme",
+                )
+            }.forEach {
+                it.addInstructions(0, "return-void")
+            }
+            mutableSemIms.methods.filter {
+                it.name in setOf("isRcsEnabled", "isIpmeEnabled", "isServiceAvailable", "isServiceEnabled", "isForbidden", "isValidGbaKey")
+            }.forEach {
+                it.addInstructions(0, "const/4 v0, 0x0\nreturn v0")
+            }
+            mutableSemIms.methods.filter {
+                it.name in setOf("getCurrentProfile", "getRegistrationInfo", "getRegistrationInfoByServiceType", "getAuthorizationHeader")
+            }.forEach {
+                it.addInstructions(0, "const/4 v0, 0x0\nreturn-object v0")
+            }
+            log.info("Patched SemImsManagerImpl to disable inaccessible Samsung IMS features")
+        }
+
+        // Redirect telephony calls that fail without system permissions to safe wrappers
+        val telephonyMoved = redirectToWrappers(
+            "Lcz/boredclawd/samsungmessages/Telephony;",
+            setOf("Landroid/telephony/TelephonyManager;", "Landroid/telephony/SubscriptionManager;", "Landroid/telephony/SmsManager;"),
+        )
+        log.info("Redirected $telephonyMoved Telephony calls to safe wrapper")
     }
 }
