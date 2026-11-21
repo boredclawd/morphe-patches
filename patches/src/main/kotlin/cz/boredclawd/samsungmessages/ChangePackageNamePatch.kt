@@ -1,5 +1,6 @@
 package cz.boredclawd.samsungmessages
 
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.patch.BytecodePatchContext
 import app.morphe.patcher.patch.PatchException
@@ -31,6 +32,15 @@ private val CONST_STRING = setOf(Opcode.CONST_STRING, Opcode.CONST_STRING_JUMBO)
 
 private fun Any.literal(): String? =
     if (this is ReferenceInstruction && opcode in CONST_STRING) (reference as StringReference).string else null
+
+private fun registerName(register: Int, method: Method): String {
+    val impl = method.implementation ?: return "v$register"
+    val totalRegisters = impl.registerCount
+    val parameterCount = method.parameterTypes.sumOf { if (it == "J" || it == "D") 2 else 1 } +
+        (if (com.android.tools.smali.dexlib2.AccessFlags.STATIC.isSet(method.accessFlags)) 0 else 1)
+    val locals = totalRegisters - parameterCount
+    return if (register < locals) "v$register" else "p${register - locals}"
+}
 
 /**
  * Rewrites every string literal in the app (not in our extensions) that [change] answers a new value for:
@@ -66,7 +76,8 @@ internal fun BytecodePatchContext.rewriteStringLiterals(change: (String) -> Stri
             val insn = instructions[index]
             val to = insn.literal()?.let(change) ?: continue
             val escaped = to.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
-            mutable.replaceInstruction(index, "${if (insn.opcode == Opcode.CONST_STRING_JUMBO) "const-string/jumbo" else "const-string"} v${(insn as OneRegisterInstruction).registerA}, \"$escaped\"")
+            val reg = registerName((insn as OneRegisterInstruction).registerA, method)
+            mutable.replaceInstruction(index, "${if (insn.opcode == Opcode.CONST_STRING_JUMBO) "const-string/jumbo" else "const-string"} $reg, \"$escaped\"")
             rewritten++
         }
     }
@@ -157,12 +168,14 @@ val changePackageNamePatch = bytecodePatch(
         // Exact names, content:// URIs built on them, the app's process names ("<package>:...") and its
         // android.resource:// URIs.
         fun rename(s: String): String? {
+            // Keep stock package string literals untouched (e.g. FloatingFeature defaults)
+            if (s == old) return null
             renamed[s]?.let { return it }
             if (s.startsWith("$old:")) return new + s.substring(old.length)
             if (s.startsWith("android.resource://$old/")) return "android.resource://$new/" + s.substring("android.resource://$old/".length)
             if (s.startsWith("content://")) {
                 val rest = s.removePrefix("content://")
-                val hit = renamed.keys.filter { rest == it || rest.startsWith("$it/") }.maxByOrNull { it.length } ?: return null
+                val hit = renamed.keys.filter { it != old && (rest == it || rest.startsWith("$it/")) }.maxByOrNull { it.length } ?: return null
                 return "content://" + renamed.getValue(hit) + rest.substring(hit.length)
             }
             return null
@@ -171,5 +184,17 @@ val changePackageNamePatch = bytecodePatch(
         val literals = rewriteStringLiterals(::rename)
         log.info("Package rename: $literals literals moved")
         if (literals < 10) throw PatchException("only $literals package, authority and permission literals found")
+
+        // Neutralize power save whitelist registration to prevent startup SecurityException
+        // when running as a non-system user app
+        val deviceUtil = classDefByOrNull("Lcom/samsung/android/messaging/common/util/DeviceUtil;")
+        if (deviceUtil != null) {
+            val mutableDeviceUtil = mutableClassDefBy("Lcom/samsung/android/messaging/common/util/DeviceUtil;")
+            mutableDeviceUtil.methods.find { it.name == "addToPowerSaveAllowlistApp" && it.parameterTypes.isEmpty() }
+                ?.addInstructions(0, "return-void")
+            mutableDeviceUtil.methods.find { it.name == "isPowerSaveAllowListed" && it.parameterTypes.isEmpty() }
+                ?.addInstructions(0, "const/4 v0, 0x1\nreturn v0")
+            log.info("Patched DeviceUtil power-save methods to prevent startup SecurityException")
+        }
     }
 }
