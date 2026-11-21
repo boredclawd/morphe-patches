@@ -1,3 +1,9 @@
+## [1.0.0-dev.2](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.1...v1.0.0-dev.2) (2026-11-21)
+
+### ✨ New Features
+
+* add charged SMS and roaming confirmation alert patch for Samsung Messages ([77d5fed](https://github.com/boredclawd/morphe-patches/commit/77d5fed1e2924a6761c2a2896a227fe716ceb2e9))
+
 ## 1.0.0-dev.1 (2026-11-20)
 
 ### ✨ New Features
