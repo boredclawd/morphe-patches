@@ -290,15 +290,12 @@ val changePackageNamePatch = bytecodePatch(
             log.info("Patched CmcFeature to disable inaccessible CMC listeners")
         }
 
-        // Catch SecurityException on any restricted ContentObserver registrations
-        val observers = mapOf(
-            "Landroid/content/ContentResolver;" to setOf(
-                "registerContentObserver(Landroid/net/Uri;ZLandroid/database/ContentObserver;)V",
-                "registerContentObserver(Landroid/net/Uri;ZLandroid/database/ContentObserver;I)V",
-            ),
+        // Redirect ContentResolver calls that may throw SecurityException to safe wrappers
+        val providerCallsMoved = redirectToWrappers(
+            "Lcz/boredclawd/samsungmessages/Providers;",
+            setOf("Landroid/content/ContentResolver;"),
         )
-        val redirectedObservers = redirectCalls("Lcz/boredclawd/samsungmessages/Providers;", observers)
-        log.info("Redirected $redirectedObservers ContentObserver registrations to safe wrapper")
+        log.info("Redirected $providerCallsMoved ContentResolver calls to safe wrapper")
 
         // Neutralize SimMobility listeners that require privileged IMS service
         val simMobility = classDefByOrNull("Lcom/samsung/android/messaging/common/util/SimMobility;")
