@@ -359,7 +359,7 @@ val changePackageNamePatch = bytecodePatch(
             if (classDefByOrNull(taskCls) != null) {
                 val mutableTask = mutableClassDefBy(taskCls)
                 mutableTask.methods.filter { it.name == "doInBackground" && it.returnType == "Ljava/lang/Boolean;" }.forEach {
-                    it.addInstructions(0, "sget-object v0, Ljava/lang/Boolean;.FALSE:Ljava/lang/Boolean;\nreturn-object v0")
+                    it.addInstructions(0, "sget-object v0, Ljava/lang/Boolean;->FALSE:Ljava/lang/Boolean;\nreturn-object v0")
                 }
                 log.info("Patched $taskCls doInBackground to prevent SemImsManager SecurityException")
             }
