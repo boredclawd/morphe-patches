@@ -1,3 +1,9 @@
+## [1.0.0-dev.8](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.7...v1.0.0-dev.8) (2026-11-21)
+
+### 🐛 Bug Fixes
+
+* wrap all ContentResolver operations to prevent provider SecurityException ([4262e87](https://github.com/boredclawd/morphe-patches/commit/4262e87c6e8e7b37a999d750768ab2cae414e84d))
+
 ## [1.0.0-dev.7](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.6...v1.0.0-dev.7) (2026-11-21)
 
 ### 🐛 Bug Fixes
