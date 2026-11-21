@@ -10,8 +10,11 @@ import app.morphe.patcher.patch.stringOption
 import app.morphe.patcher.util.proxy.mutableTypes.encodedValue.MutableStringEncodedValue
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.Method
+import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
+import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.iface.reference.StringReference
 import com.android.tools.smali.dexlib2.iface.value.StringEncodedValue
 import cz.boredclawd.samsungmessages.Constants.COMPATIBILITY_SAMSUNG_MESSAGES
@@ -84,6 +87,58 @@ internal fun BytecodePatchContext.rewriteStringLiterals(change: (String) -> Stri
     return rewritten
 }
 
+private val VIRTUAL = setOf(Opcode.INVOKE_VIRTUAL, Opcode.INVOKE_VIRTUAL_RANGE)
+private val STATIC = setOf(Opcode.INVOKE_STATIC, Opcode.INVOKE_STATIC_RANGE)
+
+private fun MethodReference.shape() = "$name(${parameterTypes.joinToString("")})$returnType"
+
+internal fun BytecodePatchContext.redirectCalls(target: String, calls: Map<String, Set<String>>): Int {
+    fun Any.match(): MethodReference? {
+        if (this !is ReferenceInstruction || (opcode !in VIRTUAL && opcode !in STATIC)) return null
+        val r = reference as? MethodReference ?: return null
+        return if (calls[r.definingClass]?.contains(r.shape()) == true) r else null
+    }
+
+    val sites = mutableListOf<Pair<String, Method>>()
+    classDefForEach { c ->
+        if (c.type.startsWith("Lcz/boredclawd/")) return@classDefForEach
+        for (m in c.methods) {
+            if (m.implementation?.instructions?.any { it.match() != null } == true) sites += c.type to m
+        }
+    }
+    var moved = 0
+    for ((type, method) in sites) {
+        val mutable = mutableClassDefBy(type).methods.first {
+            it.name == method.name && it.parameterTypes == method.parameterTypes && it.returnType == method.returnType
+        }
+        val instructions = mutable.implementation!!.instructions
+        for (index in instructions.indices) {
+            val insn = instructions[index]
+            val r = insn.match() ?: continue
+            val receiver = if (insn.opcode in VIRTUAL) r.definingClass else ""
+            val to = "$target->${r.name}($receiver${r.parameterTypes.joinToString("")})${r.returnType}"
+            val call = when (insn) {
+                is FiveRegisterInstruction -> {
+                    val regs = listOf(insn.registerC, insn.registerD, insn.registerE, insn.registerF, insn.registerG)
+                        .take(insn.registerCount).map { registerName(it, method) }
+                    regs.joinToString(", ", "invoke-static { ", " }, $to")
+                }
+                is RegisterRangeInstruction -> {
+                    val start = insn.startRegister
+                    val count = insn.registerCount
+                    val startName = registerName(start, method)
+                    val endName = registerName(start + count - 1, method)
+                    "invoke-static/range { $startName .. $endName }, $to"
+                }
+                else -> throw PatchException("unexpected ${insn.opcode} in $type.${method.name}")
+            }
+            mutable.replaceInstruction(index, call)
+            moved++
+        }
+    }
+    return moved
+}
+
 /**
  * Installs next to Samsung's stock Messages on Galaxy phones under its own package name so it can be installed
  * as an update or standalone user app on unrooted One UI and set as the default SMS app.
@@ -98,6 +153,7 @@ val changePackageNamePatch = bytecodePatch(
     default = false,
 ) {
     compatibleWith(COMPATIBILITY_SAMSUNG_MESSAGES)
+    extendWith(SAMSUNG_MESSAGES_EXTENSION)
 
     val packageName = stringOption(
         key = "packageName",
@@ -196,5 +252,33 @@ val changePackageNamePatch = bytecodePatch(
                 ?.addInstructions(0, "const/4 v0, 0x1\nreturn v0")
             log.info("Patched DeviceUtil power-save methods to prevent startup SecurityException")
         }
+
+        // Neutralize Call & Message Continuity (CMC) features that require privileged CMC_ES_PERMISSION
+        val cmcFeature = classDefByOrNull("Lcom/samsung/android/messaging/common/configuration/cmc/CmcFeature;")
+        if (cmcFeature != null) {
+            val mutableCmc = mutableClassDefBy("Lcom/samsung/android/messaging/common/configuration/cmc/CmcFeature;")
+            mutableCmc.methods.filter { it.name == "registerInitialListeners" }.forEach {
+                it.addInstructions(0, "return-void")
+            }
+            mutableCmc.methods.filter {
+                it.name in setOf("isCmcOpenSecondaryDevice", "getEnableCmcOpenService", "isCmcOpenPrimaryDevice", "isCmcOpenActive", "isCmcWatchActive")
+            }.forEach {
+                it.addInstructions(0, "const/4 v0, 0x0\nreturn v0")
+            }
+            mutableCmc.methods.filter { it.name == "getCmcSettingManager" && it.parameterTypes.isEmpty() }.forEach {
+                it.addInstructions(0, "const/4 v0, 0x0\nreturn-object v0")
+            }
+            log.info("Patched CmcFeature to disable inaccessible CMC listeners")
+        }
+
+        // Catch SecurityException on any restricted ContentObserver registrations
+        val observers = mapOf(
+            "Landroid/content/ContentResolver;" to setOf(
+                "registerContentObserver(Landroid/net/Uri;ZLandroid/database/ContentObserver;)V",
+                "registerContentObserver(Landroid/net/Uri;ZLandroid/database/ContentObserver;I)V",
+            ),
+        )
+        val redirectedObservers = redirectCalls("Lcz/boredclawd/samsungmessages/Providers;", observers)
+        log.info("Redirected $redirectedObservers ContentObserver registrations to safe wrapper")
     }
 }
