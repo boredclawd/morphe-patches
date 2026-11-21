@@ -297,7 +297,10 @@ val changePackageNamePatch = bytecodePatch(
             mutableDeviceUtil.methods.filter { it.name == "killMessage" }.forEach {
                 it.addInstructions(0, "return-void")
             }
-            log.info("Patched DeviceUtil power-save and killMessage methods")
+            mutableDeviceUtil.methods.filter { it.name in setOf("isFlipCoverDisplay", "isFlipModelFolded", "isDualLcdType") }.forEach {
+                it.addInstructions(0, "const/4 v0, 0x0\nreturn v0")
+            }
+            log.info("Patched DeviceUtil power-save, killMessage and flip-cover methods")
         }
 
         // Neutralize Call & Message Continuity (CMC) features that require privileged CMC_ES_PERMISSION
@@ -416,7 +419,28 @@ val changePackageNamePatch = bytecodePatch(
             mutableFeature.methods.filter { it.name == "getMessagePackageName" && it.returnType == "Ljava/lang/String;" }.forEach {
                 it.addInstructions(0, "const-string v0, \"$new\"\nreturn-object v0")
             }
-            log.info("Patched Feature.getMessagePackageName to return $new")
+            mutableFeature.methods.filter { it.name == "isGroupMmsSupported" && it.returnType == "Z" }.forEach {
+                it.addInstructions(0, "const/4 v0, 0x1\nreturn v0")
+            }
+            log.info("Patched Feature.getMessagePackageName and isGroupMmsSupported")
+        }
+
+        // Enable MMS group conversation setting by default so multi-recipient threads stay as Group MMS
+        val settingCls = classDefByOrNull("Lcom/samsung/android/messaging/common/setting/Setting;")
+        if (settingCls != null) {
+            val mutableSetting = mutableClassDefBy("Lcom/samsung/android/messaging/common/setting/Setting;")
+            mutableSetting.methods.filter { it.name == "getMmsGroupConversationEnabled" && it.parameterTypes.size == 1 }.forEach { m ->
+                m.implementation?.let { impl ->
+                    for (i in impl.instructions.indices) {
+                        val insn = impl.instructions[i]
+                        if (insn.opcode == Opcode.CONST_4 && (insn as OneRegisterInstruction).registerA == 1) {
+                            m.replaceInstruction(i, "const/4 v1, 0x1")
+                            log.info("Patched Setting.getMmsGroupConversationEnabled default to true")
+                            break
+                        }
+                    }
+                }
+            }
         }
 
         // Redirect startActivity calls that may target stock package to safe wrapper
