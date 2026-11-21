@@ -1,3 +1,9 @@
+## [1.0.0-dev.6](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.5...v1.0.0-dev.6) (2026-11-21)
+
+### 🐛 Bug Fixes
+
+* wrap Telephony calls and neutralize IMS and SimMobility permissions ([6edc914](https://github.com/boredclawd/morphe-patches/commit/6edc914f1c070ef18d26bf35c81f4e804fed29a7))
+
 ## [1.0.0-dev.5](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.4...v1.0.0-dev.5) (2026-11-21)
 
 ### 🐛 Bug Fixes
