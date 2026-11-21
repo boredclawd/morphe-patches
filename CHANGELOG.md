@@ -1,3 +1,10 @@
+## [1.0.0-dev.9](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.8...v1.0.0-dev.9) (2026-11-21)
+
+### 🐛 Bug Fixes
+
+* return empty cursor on query failure and stub killMessage, CB and IMS tasks ([7a56c77](https://github.com/boredclawd/morphe-patches/commit/7a56c77c9247c893410486fc3bfdf6aa74363057))
+* use literal query projection arg in emptyCursor ([2008be8](https://github.com/boredclawd/morphe-patches/commit/2008be809e83a3f26c8a0944a64768b56a338d1b))
+
 ## [1.0.0-dev.8](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.7...v1.0.0-dev.8) (2026-11-21)
 
 ### 🐛 Bug Fixes
