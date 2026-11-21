@@ -1,3 +1,9 @@
+## [1.0.0-dev.10](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.9...v1.0.0-dev.10) (2026-11-21)
+
+### 🐛 Bug Fixes
+
+* **samsungmessages:** fix smali field syntax for Boolean.FALSE in IMS tasks ([2acdb1b](https://github.com/boredclawd/morphe-patches/commit/2acdb1bbe0b003bf6e5e90514f616e572726e151))
+
 ## [1.0.0-dev.9](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.8...v1.0.0-dev.9) (2026-11-21)
 
 ### 🐛 Bug Fixes
