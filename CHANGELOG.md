@@ -1,3 +1,9 @@
+## [1.0.0-dev.4](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.3...v1.0.0-dev.4) (2026-11-21)
+
+### 🐛 Bug Fixes
+
+* resolve invalid register warning and power-save startup crash in package rename patch ([2f4fd2d](https://github.com/boredclawd/morphe-patches/commit/2f4fd2d9cfeddd40a8aa56398c1956810d807afd))
+
 ## [1.0.0-dev.3](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.2...v1.0.0-dev.3) (2026-11-21)
 
 ### ✨ New Features
