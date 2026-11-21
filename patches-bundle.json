@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-21T00:38:14",
-  "description": "## [1.0.0-dev.2](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.1...v1.0.0-dev.2) (2026-11-21)\n\n### ✨ New Features\n\n* add charged SMS and roaming confirmation alert patch for Samsung Messages ([77d5fed](https://github.com/boredclawd/morphe-patches/commit/77d5fed1e2924a6761c2a2896a227fe716ceb2e9))",
-  "download_url": "https://github.com/boredclawd/morphe-patches/releases/download/v1.0.0-dev.2/patches-1.0.0-dev.2.mpp",
+  "created_at": "2026-11-21T11:35:06",
+  "description": "## [1.0.0-dev.3](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.2...v1.0.0-dev.3) (2026-11-21)\n\n### ✨ New Features\n\n* add change package name patch for Samsung Messages ([914d66b](https://github.com/boredclawd/morphe-patches/commit/914d66b07be4c6c334f20fc5dc040f9debf45193))",
+  "download_url": "https://github.com/boredclawd/morphe-patches/releases/download/v1.0.0-dev.3/patches-1.0.0-dev.3.mpp",
   "signature_download_url": "",
-  "version": "1.0.0-dev.2"
+  "version": "1.0.0-dev.3"
 }

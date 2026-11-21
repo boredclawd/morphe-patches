@@ -1,7 +1,51 @@
 {
   "NOTE": "Do NOT manually edit this file. This file is automatically updated when semantic release (release.yml) runs. Manually editing this file can break your releases and break third party tools that use this file.",
-  "version": "1.0.0-dev.2",
+  "version": "1.0.0-dev.3",
   "patches": [
+    {
+      "name": "Change package name",
+      "description": "Installs next to Samsung's own Messages on Galaxy phones under its own package name.",
+      "default": false,
+      "category": null,
+      "compatiblePackages": [
+        {
+          "packageName": "com.samsung.android.messaging",
+          "name": "Samsung Messages",
+          "description": null,
+          "apkFileType": "APK",
+          "appIconColor": "#20AFFF",
+          "signatures": null,
+          "formFactor": "MOBILE",
+          "targets": [
+            {
+              "version": "15.5.31.11",
+              "versionCodes": null,
+              "isExperimental": false,
+              "minSdk": 31,
+              "description": null
+            },
+            {
+              "version": "16.3.21.1",
+              "versionCodes": null,
+              "isExperimental": false,
+              "minSdk": 33,
+              "description": null
+            }
+          ]
+        }
+      ],
+      "options": [
+        {
+          "key": "packageName",
+          "title": "Package name",
+          "description": "Must be a valid Android package name.",
+          "required": true,
+          "type": "kotlin.String",
+          "default": "cz.boredclawd.messaging",
+          "values": null
+        }
+      ]
+    },
     {
       "name": "Charged SMS and roaming confirmation alert",
       "description": "Shows a One UI confirmation dialog before sending an SMS that will incur extra charges (international SMS or roaming outside EU/RLAH).",

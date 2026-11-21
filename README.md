@@ -19,11 +19,11 @@ Click the button below, or manually add this repo url to Morphe Manager: https:/
 ## 🩹 Patches list
 
 <!-- PATCHES_START EXPANDED -->
-> **[v1.0.0-dev.2](https://github.com/boredclawd/morphe-patches/releases/tag/v1.0.0-dev.2)**&nbsp;&nbsp;&middot;&nbsp;&nbsp;`dev`&nbsp;&nbsp;&middot;&nbsp;&nbsp;**2 patches** across **1 apps**&nbsp;&nbsp;&middot;&nbsp;&nbsp;[Full details](PATCHES.md)
+> **[v1.0.0-dev.3](https://github.com/boredclawd/morphe-patches/releases/tag/v1.0.0-dev.3)**&nbsp;&nbsp;&middot;&nbsp;&nbsp;`dev`&nbsp;&nbsp;&middot;&nbsp;&nbsp;**3 patches** across **1 apps**&nbsp;&nbsp;&middot;&nbsp;&nbsp;[Full details](PATCHES.md)
 
 | # | App | Patches | Version | Package |
 |---|---|---|---|---|
-| 1 | [**Samsung Messages**](PATCHES.md#samsung-messages-comsamsungandroidmessaging) | 2 | `15.5.31.11`, `16.3.21.1` | [`com.samsung.android.messaging`](https://play.google.com/store/apps/details?id=com.samsung.android.messaging) |
+| 1 | [**Samsung Messages**](PATCHES.md#samsung-messages-comsamsungandroidmessaging) | 3 | `15.5.31.11`, `16.3.21.1` | [`com.samsung.android.messaging`](https://play.google.com/store/apps/details?id=com.samsung.android.messaging) |
 <!-- PATCHES_END -->
 
 ### 🛠️ Building locally

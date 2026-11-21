@@ -1,3 +1,9 @@
+## [1.0.0-dev.3](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.2...v1.0.0-dev.3) (2026-11-21)
+
+### ✨ New Features
+
+* add change package name patch for Samsung Messages ([914d66b](https://github.com/boredclawd/morphe-patches/commit/914d66b07be4c6c334f20fc5dc040f9debf45193))
+
 ## [1.0.0-dev.2](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.1...v1.0.0-dev.2) (2026-11-21)
 
 ### ✨ New Features
