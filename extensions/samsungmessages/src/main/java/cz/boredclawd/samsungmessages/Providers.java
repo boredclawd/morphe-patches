@@ -4,6 +4,7 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.ContentObserver;
 import android.database.Cursor;
+import android.database.MatrixCursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.CancellationSignal;
@@ -12,47 +13,88 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
- * Catches SecurityException when Samsung Messages accesses providers
+ * Catches SecurityException and other provider failures when Samsung Messages accesses providers
  * that require Samsung system/platform permissions (e.g. Call & Message Continuity, logs, spam, IMS settings).
+ * Returns empty non-null MatrixCursor on query failure so message sync and loaders do not abort.
  */
 public final class Providers {
     private static final String TAG = "SamsungMessages";
 
     private Providers() {}
 
+    private static Cursor emptyCursor(final String[] projection) {
+        String[] cols = (projection != null && projection.length > 0) ? projection : new String[]{"_id"};
+        return new MatrixCursor(cols) {
+            @Override
+            public int getColumnIndex(String columnName) {
+                int idx = super.getColumnIndex(columnName);
+                return idx >= 0 ? idx : 0;
+            }
+
+            @Override
+            public int getColumnIndexOrThrow(String columnName) {
+                int idx = super.getColumnIndex(columnName);
+                return idx >= 0 ? idx : 0;
+            }
+        };
+    }
+
+    private static Cursor emptyCursor(String[] projection, Bundle queryArgs) {
+        String[] cols = projection;
+        if ((cols == null || cols.length == 0) && queryArgs != null) {
+            cols = queryArgs.getStringArray(ContentResolver.QUERY_ARG_SQL_PROJECTION);
+        }
+        return emptyCursor(cols);
+    }
+
     public static Cursor query(ContentResolver resolver, Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
         try {
-            return resolver.query(uri, projection, selection, selectionArgs, sortOrder);
+            Cursor cursor = resolver.query(uri, projection, selection, selectionArgs, sortOrder);
+            if (cursor != null) {
+                return cursor;
+            }
+            Log.w(TAG, "Query returned null for " + uri + ", returning empty cursor");
+            return emptyCursor(projection);
         } catch (SecurityException e) {
             Log.w(TAG, "Skipping query for " + uri + ": " + e.getMessage());
-            return null;
+            return emptyCursor(projection);
         } catch (Throwable t) {
             Log.w(TAG, "Failed query for " + uri + ": " + t.getMessage());
-            return null;
+            return emptyCursor(projection);
         }
     }
 
     public static Cursor query(ContentResolver resolver, Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder, CancellationSignal cancellationSignal) {
         try {
-            return resolver.query(uri, projection, selection, selectionArgs, sortOrder, cancellationSignal);
+            Cursor cursor = resolver.query(uri, projection, selection, selectionArgs, sortOrder, cancellationSignal);
+            if (cursor != null) {
+                return cursor;
+            }
+            Log.w(TAG, "Query returned null for " + uri + ", returning empty cursor");
+            return emptyCursor(projection);
         } catch (SecurityException e) {
             Log.w(TAG, "Skipping query for " + uri + ": " + e.getMessage());
-            return null;
+            return emptyCursor(projection);
         } catch (Throwable t) {
             Log.w(TAG, "Failed query for " + uri + ": " + t.getMessage());
-            return null;
+            return emptyCursor(projection);
         }
     }
 
     public static Cursor query(ContentResolver resolver, Uri uri, String[] projection, Bundle queryArgs, CancellationSignal cancellationSignal) {
         try {
-            return resolver.query(uri, projection, queryArgs, cancellationSignal);
+            Cursor cursor = resolver.query(uri, projection, queryArgs, cancellationSignal);
+            if (cursor != null) {
+                return cursor;
+            }
+            Log.w(TAG, "Query returned null for " + uri + ", returning empty cursor");
+            return emptyCursor(projection, queryArgs);
         } catch (SecurityException e) {
             Log.w(TAG, "Skipping query for " + uri + ": " + e.getMessage());
-            return null;
+            return emptyCursor(projection, queryArgs);
         } catch (Throwable t) {
             Log.w(TAG, "Failed query for " + uri + ": " + t.getMessage());
-            return null;
+            return emptyCursor(projection, queryArgs);
         }
     }
 

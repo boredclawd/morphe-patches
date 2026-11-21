@@ -269,7 +269,10 @@ val changePackageNamePatch = bytecodePatch(
                 ?.addInstructions(0, "return-void")
             mutableDeviceUtil.methods.find { it.name == "isPowerSaveAllowListed" && it.parameterTypes.isEmpty() }
                 ?.addInstructions(0, "const/4 v0, 0x1\nreturn v0")
-            log.info("Patched DeviceUtil power-save methods to prevent startup SecurityException")
+            mutableDeviceUtil.methods.filter { it.name == "killMessage" }.forEach {
+                it.addInstructions(0, "return-void")
+            }
+            log.info("Patched DeviceUtil power-save and killMessage methods")
         }
 
         // Neutralize Call & Message Continuity (CMC) features that require privileged CMC_ES_PERMISSION
@@ -337,5 +340,29 @@ val changePackageNamePatch = bytecodePatch(
             setOf("Landroid/telephony/TelephonyManager;", "Landroid/telephony/SubscriptionManager;", "Landroid/telephony/SmsManager;"),
         )
         log.info("Redirected $telephonyMoved Telephony calls to safe wrapper")
+
+        // Neutralize Cell Broadcast range methods in SmsManagerWrapper to prevent RECEIVE_EMERGENCY_BROADCAST SecurityException
+        val smsManagerWrapper = classDefByOrNull("Lcom/samsung/android/messaging/sepwrapper/SmsManagerWrapper;")
+        if (smsManagerWrapper != null) {
+            val mutableSmsWrapper = mutableClassDefBy("Lcom/samsung/android/messaging/sepwrapper/SmsManagerWrapper;")
+            mutableSmsWrapper.methods.filter { it.name in setOf("disableCellBroadcastRange", "enableCellBroadcastRange") }.forEach {
+                it.addInstructions(0, "const/4 v0, 0x0\nreturn v0")
+            }
+            log.info("Patched SmsManagerWrapper cell broadcast methods to prevent SecurityException")
+        }
+
+        // Neutralize background IMS manager tasks that access privileged Samsung IMS service
+        for (taskCls in listOf(
+            "Lcom/samsung/android/dialtacts/model/ims/imsmanager/ImsSim1ManagerTask;",
+            "Lcom/samsung/android/dialtacts/model/ims/imsmanager/ImsSim2ManagerTask;",
+        )) {
+            if (classDefByOrNull(taskCls) != null) {
+                val mutableTask = mutableClassDefBy(taskCls)
+                mutableTask.methods.filter { it.name == "doInBackground" && it.returnType == "Ljava/lang/Boolean;" }.forEach {
+                    it.addInstructions(0, "sget-object v0, Ljava/lang/Boolean;.FALSE:Ljava/lang/Boolean;\nreturn-object v0")
+                }
+                log.info("Patched $taskCls doInBackground to prevent SemImsManager SecurityException")
+            }
+        }
     }
 }
