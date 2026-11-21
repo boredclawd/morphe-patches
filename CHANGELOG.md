@@ -1,3 +1,10 @@
+## [1.0.0-dev.5](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.4...v1.0.0-dev.5) (2026-11-21)
+
+### 🐛 Bug Fixes
+
+* **extension:** invoke hidden registerContentObserver overload via reflection ([1735beb](https://github.com/boredclawd/morphe-patches/commit/1735beb0599343b1d53debcc44e776a630df6745))
+* intercept restricted CMC content observers and stub CmcFeature ([d416b5e](https://github.com/boredclawd/morphe-patches/commit/d416b5ea80c8ba6d20cd8d51d8a76e16b25fff78))
+
 ## [1.0.0-dev.4](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.3...v1.0.0-dev.4) (2026-11-21)
 
 ### 🐛 Bug Fixes
