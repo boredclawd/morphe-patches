@@ -1,3 +1,9 @@
+## [1.0.0-dev.11](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.10...v1.0.0-dev.11) (2026-11-21)
+
+### 🐛 Bug Fixes
+
+* **samsungmessages:** fix conversation sync and settings crash ([9daba62](https://github.com/boredclawd/morphe-patches/commit/9daba627332a4c7c402a40bec9a965c9ebb96ee2))
+
 ## [1.0.0-dev.10](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.9...v1.0.0-dev.10) (2026-11-21)
 
 ### 🐛 Bug Fixes
