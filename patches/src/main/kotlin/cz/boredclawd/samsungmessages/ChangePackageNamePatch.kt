@@ -314,31 +314,24 @@ val changePackageNamePatch = bytecodePatch(
         }
 
         // Neutralize IMS wrapper calls that access privileged Samsung IMS service
-        val semImsManagerImpl = classDefByOrNull("Lcom/samsung/android/messaging/seapiwrapper/factory/SemImsManagerImpl;")
-        if (semImsManagerImpl != null) {
-            val mutableSemIms = mutableClassDefBy("Lcom/samsung/android/messaging/seapiwrapper/factory/SemImsManagerImpl;")
-            mutableSemIms.methods.filter {
-                it.name in setOf(
-                    "connectService", "disconnectService", "registerSimMobilityStatusListener",
-                    "registerImsRegistrationListener", "unregisterImsRegistrationListener",
-                    "registerAutoConfigurationListener", "unregisterAutoConfigurationListener",
-                    "registerImsOngoingFtEventListener", "unregisterImsOngoingFtEventListener",
-                    "enableRcs", "enableIpme",
-                )
-            }.forEach {
-                it.addInstructions(0, "return-void")
+        listOf(
+            "Lcom/samsung/android/messaging/seapiwrapper/factory/SemImsManagerImpl;",
+            "Lcom/samsung/android/messaging/seapiwrapper/factory/ImsManagerImpl;",
+        ).forEach { descriptor ->
+            val cls = classDefByOrNull(descriptor) ?: return@forEach
+            val mutableCls = mutableClassDefBy(descriptor)
+            mutableCls.methods.filter { it.name != "<init>" && it.name != "<clinit>" }.forEach {
+                when {
+                    it.returnType == "V" -> it.addInstructions(0, "return-void")
+                    it.returnType.startsWith("L") || it.returnType.startsWith("[") ->
+                        it.addInstructions(0, "const/4 v0, 0x0\nreturn-object v0")
+                    it.returnType in setOf("J", "D") ->
+                        it.addInstructions(0, "const-wide/16 v0, 0x0\nreturn-wide v0")
+                    else ->
+                        it.addInstructions(0, "const/4 v0, 0x0\nreturn v0")
+                }
             }
-            mutableSemIms.methods.filter {
-                it.name in setOf("isRcsEnabled", "isIpmeEnabled", "isServiceAvailable", "isServiceEnabled", "isForbidden", "isValidGbaKey")
-            }.forEach {
-                it.addInstructions(0, "const/4 v0, 0x0\nreturn v0")
-            }
-            mutableSemIms.methods.filter {
-                it.name in setOf("getCurrentProfile", "getRegistrationInfo", "getRegistrationInfoByServiceType", "getAuthorizationHeader")
-            }.forEach {
-                it.addInstructions(0, "const/4 v0, 0x0\nreturn-object v0")
-            }
-            log.info("Patched SemImsManagerImpl to disable inaccessible Samsung IMS features")
+            log.info("Neutralized all methods in $descriptor to disable inaccessible Samsung IMS features")
         }
 
         // Redirect telephony calls that fail without system permissions to safe wrappers
