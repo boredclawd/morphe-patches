@@ -42,7 +42,7 @@ public final class Providers {
     private static Cursor emptyCursor(String[] projection, Bundle queryArgs) {
         String[] cols = projection;
         if ((cols == null || cols.length == 0) && queryArgs != null) {
-            cols = queryArgs.getStringArray(ContentResolver.QUERY_ARG_SQL_PROJECTION);
+            cols = queryArgs.getStringArray("android:query-arg-sql-projection");
         }
         return emptyCursor(cols);
     }
