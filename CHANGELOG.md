@@ -1,3 +1,9 @@
+## [1.0.0-dev.7](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.6...v1.0.0-dev.7) (2026-11-21)
+
+### 🐛 Bug Fixes
+
+* match exact method return types in SemImsManagerImpl and ImsManagerImpl stubs ([f248d56](https://github.com/boredclawd/morphe-patches/commit/f248d565374de366d231e30e6d67adf43e372ee9))
+
 ## [1.0.0-dev.6](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.5...v1.0.0-dev.6) (2026-11-21)
 
 ### 🐛 Bug Fixes
