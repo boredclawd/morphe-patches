@@ -4,7 +4,7 @@ patches {
     // TODO: Update this section with your project details.
     about {
         name = "boredclawd patches"
-        description = "Patches for Samsung Messages: Disable SMS to MMS conversion."
+        description = "Patches for Samsung Messages: Disable SMS to MMS conversion and Charged SMS & Roaming confirmation alert."
         source = "git@github.com:boredclawd/morphe-patches.git"
         author = "boredclawd"
         contact = "https://github.com/boredclawd"

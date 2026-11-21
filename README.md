@@ -1,12 +1,12 @@
-# 👋🧩 Morphe Patches template
+# 🧩 boredclawd's Morphe Patches
 
-Template repository for Morphe Patches.
+Custom Morphe patches for Samsung apps.
 
 ## ❓ About
 
-Patches for apps I like.
-
-<!-- TODO: Update this about section with a brief introduction/summary about this repo and what it offers. -->
+Patches for Samsung Messages:
+- **Disable SMS to MMS conversion**: Prevents automatic conversion of long text messages to MMS, sending them as multi-part SMS instead.
+- **Charged SMS and roaming confirmation alert**: Shows a One UI confirmation dialog before sending an SMS that will incur extra charges (international SMS or roaming outside EU/RLAH), with Proceed/Cancel options and in-app configuration. Supports English, Czech, and Slovak.
 
 ### How to use these patches
 
