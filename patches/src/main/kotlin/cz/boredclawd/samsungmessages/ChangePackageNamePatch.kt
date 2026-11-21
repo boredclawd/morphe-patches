@@ -229,6 +229,33 @@ val changePackageNamePatch = bytecodePatch(
                     }
                 }
 
+                // Also update @string/package_name in res/values/strings.xml so preference intents resolve correctly
+                try {
+                    document("res/values/strings.xml").use { strings ->
+                        val list = strings.getElementsByTagName("string")
+                        var updated = false
+                        for (i in 0 until list.length) {
+                            val element = list.item(i) as Element
+                            if (element.getAttribute("name") == "package_name") {
+                                element.textContent = new
+                                updated = true
+                                log.info("Updated string/package_name in res/values/strings.xml to $new")
+                                break
+                            }
+                        }
+                        if (!updated) {
+                            val element = strings.createElement("string").apply {
+                                setAttribute("name", "package_name")
+                                textContent = new
+                            }
+                            strings.documentElement.appendChild(element)
+                            log.info("Created string/package_name in res/values/strings.xml with $new")
+                        }
+                    }
+                } catch (e: Exception) {
+                    log.warning("Could not update res/values/strings.xml: ${e.message}")
+                }
+
                 log.info("Package rename: $authorities authorities, $permissions permissions")
                 if (authorities < 20 || permissions < 15) {
                     throw PatchException("package rename found $authorities authorities and $permissions permissions")
@@ -243,14 +270,12 @@ val changePackageNamePatch = bytecodePatch(
         // Exact names, content:// URIs built on them, the app's process names ("<package>:...") and its
         // android.resource:// URIs.
         fun rename(s: String): String? {
-            // Keep stock package string literals untouched (e.g. FloatingFeature defaults)
-            if (s == old) return null
             renamed[s]?.let { return it }
             if (s.startsWith("$old:")) return new + s.substring(old.length)
             if (s.startsWith("android.resource://$old/")) return "android.resource://$new/" + s.substring("android.resource://$old/".length)
             if (s.startsWith("content://")) {
                 val rest = s.removePrefix("content://")
-                val hit = renamed.keys.filter { it != old && (rest == it || rest.startsWith("$it/")) }.maxByOrNull { it.length } ?: return null
+                val hit = renamed.keys.filter { rest == it || rest.startsWith("$it/") }.maxByOrNull { it.length } ?: return null
                 return "content://" + renamed.getValue(hit) + rest.substring(hit.length)
             }
             return null
@@ -364,5 +389,41 @@ val changePackageNamePatch = bytecodePatch(
                 log.info("Patched $taskCls doInBackground to prevent SemImsManager SecurityException")
             }
         }
+
+        // Neutralize ActivityManagerWrapper.getCurrentUser to prevent SecurityException spam and expensive dumps
+        val amWrapper = classDefByOrNull("Lcom/samsung/android/messaging/sepwrapper/ActivityManagerWrapper;")
+        if (amWrapper != null) {
+            val mutableAm = mutableClassDefBy("Lcom/samsung/android/messaging/sepwrapper/ActivityManagerWrapper;")
+            mutableAm.methods.filter { it.name == "getCurrentUser" }.forEach {
+                it.addInstructions(0, "const/4 v0, 0x0\nreturn v0")
+            }
+            log.info("Patched ActivityManagerWrapper.getCurrentUser to return 0")
+        }
+
+        // Override package name resolution so MessageContentProvider and other checks authorize the cloned app
+        val packageInfo = classDefByOrNull("Lcom/samsung/android/messaging/common/util/PackageInfo;")
+        if (packageInfo != null) {
+            val mutablePkg = mutableClassDefBy("Lcom/samsung/android/messaging/common/util/PackageInfo;")
+            mutablePkg.methods.filter { it.name == "getMessagePackageName" && it.returnType == "Ljava/lang/String;" }.forEach {
+                it.addInstructions(0, "const-string v0, \"$new\"\nreturn-object v0")
+            }
+            log.info("Patched PackageInfo.getMessagePackageName to return $new")
+        }
+
+        val feature = classDefByOrNull("Lcom/samsung/android/messaging/common/configuration/Feature;")
+        if (feature != null) {
+            val mutableFeature = mutableClassDefBy("Lcom/samsung/android/messaging/common/configuration/Feature;")
+            mutableFeature.methods.filter { it.name == "getMessagePackageName" && it.returnType == "Ljava/lang/String;" }.forEach {
+                it.addInstructions(0, "const-string v0, \"$new\"\nreturn-object v0")
+            }
+            log.info("Patched Feature.getMessagePackageName to return $new")
+        }
+
+        // Redirect startActivity calls that may target stock package to safe wrapper
+        val activitiesMoved = redirectToWrappers(
+            "Lcz/boredclawd/samsungmessages/Activities;",
+            setOf("Landroid/content/Context;", "Landroid/app/Activity;"),
+        )
+        log.info("Redirected $activitiesMoved startActivity calls to safe wrapper")
     }
 }
