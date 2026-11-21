@@ -1,3 +1,9 @@
+## [1.0.0-dev.12](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.11...v1.0.0-dev.12) (2026-11-21)
+
+### 🐛 Bug Fixes
+
+* **samsungmessages:** prevent flip cover crash and enable group MMS by default ([cb30bbd](https://github.com/boredclawd/morphe-patches/commit/cb30bbd52ea4e7d224f68217a0d9b9660b740f91))
+
 ## [1.0.0-dev.11](https://github.com/boredclawd/morphe-patches/compare/v1.0.0-dev.10...v1.0.0-dev.11) (2026-11-21)
 
 ### 🐛 Bug Fixes
